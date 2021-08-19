@@ -47,14 +47,14 @@ impl Vm for V8Vm {
             script
         } else {
             assert!(scope.has_caught());
-            return Err(exception_to_rust(scope));
+            return Err(exception_report(scope));
         };
 
         let res = if let Some(res) = script.run(scope) {
             res
         } else {
             assert!(scope.has_caught());
-            return Err(exception_to_rust(scope));
+            return Err(exception_report(scope));
         };
 
         println!("script result: {}", res.to_rust_string_lossy(scope));
@@ -63,9 +63,9 @@ impl Vm for V8Vm {
     }
 }
 
-fn exception_to_rust(try_catch: &mut TryCatch<HandleScope>) -> Report {
+fn exception_report(try_catch: &mut TryCatch<HandleScope>) -> Report {
     use std::fmt::Write;
-    let mut buffer = String::new();
+    let mut buffer = String::with_capacity(100);
 
     let exception = try_catch.exception().unwrap();
     let exception_string = exception
