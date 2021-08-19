@@ -1,10 +1,12 @@
-use std::error::Error;
-
 mod vm;
 
+use color_eyre::Result;
 use vm::Vm;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() ->  Result<()> {
+    color_eyre::install()?;
     let mut vm = vm::default_vm();
-    vm.run("JSON.stringify({foo: 'bar'})")
+    vm.run("JSON.stringify({foo: 'bar'})   a")?;
+
+    Ok(())
 }
