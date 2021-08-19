@@ -113,11 +113,11 @@ fn exception_to_rust(try_catch: &mut TryCatch<HandleScope>) -> Report {
     let end_column = message.get_end_column();
 
     for _ in 0..start_column {
-        eprint!(" ");
+        write!(buffer, " ").unwrap();
     }
 
     for _ in start_column..end_column {
-        eprint!("^");
+        write!(buffer, "^").unwrap();
     }
 
     writeln!(&mut buffer).unwrap();
