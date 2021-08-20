@@ -1,8 +1,9 @@
 use color_eyre::{Report, Result};
 use v8::{Context, Global, HandleScope, OwnedIsolate, Script, TryCatch};
+use core::fmt::Debug;
 
 pub(crate) trait Vm {
-    type BCode: ?Sized;
+    type BCode: Debug + ?Sized;
     fn run(&mut self, code: impl AsRef<Self::BCode>) -> Result<()>;
 }
 
