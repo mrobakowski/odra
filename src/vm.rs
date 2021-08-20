@@ -1,5 +1,6 @@
 use color_eyre::{Report, Result};
-use v8::{Context, Global, HandleScope, OwnedIsolate, Script, TryCatch};
+use std::fmt::Write;
+use v8::{Context, Global, HandleScope, Isolate, Local, OwnedIsolate, Script, TryCatch};
 
 pub(crate) trait Vm {
     type BCode: ?Sized;
@@ -21,10 +22,10 @@ impl V8Vm {
         v8::V8::initialize_platform(platform);
         v8::V8::initialize();
 
-        let mut isolate = v8::Isolate::new(v8::CreateParams::default());
+        let mut isolate = Isolate::new(v8::CreateParams::default());
         let context = {
-            let mut handle_scope = v8::HandleScope::new(&mut isolate);
-            let local_context = v8::Context::new(&mut handle_scope);
+            let mut handle_scope = HandleScope::new(&mut isolate);
+            let local_context = Context::new(&mut handle_scope);
             Global::new(&mut handle_scope, local_context)
         };
 
@@ -64,7 +65,6 @@ impl Vm for V8Vm {
 }
 
 fn exception_report(try_catch: &mut TryCatch<HandleScope>) -> Report {
-    use std::fmt::Write;
     let mut buffer = String::with_capacity(100);
 
     let exception = try_catch.exception().unwrap();
@@ -128,7 +128,7 @@ fn exception_report(try_catch: &mut TryCatch<HandleScope>) -> Report {
     } else {
         return Report::msg(buffer);
     };
-    let stack_trace = unsafe { v8::Local::<v8::String>::cast(stack_trace) };
+    let stack_trace = unsafe { Local::<v8::String>::cast(stack_trace) };
     let stack_trace = stack_trace
         .to_string(try_catch)
         .map(|s| s.to_rust_string_lossy(try_catch));
