@@ -1,9 +1,10 @@
 use color_eyre::{Report, Result};
+use core::fmt::Debug;
 use std::fmt::Write;
 use v8::{Context, Global, HandleScope, Isolate, Local, OwnedIsolate, Script, TryCatch};
 
 pub(crate) trait Vm {
-    type BCode: ?Sized;
+    type BCode: Debug + ?Sized;
     fn run(&mut self, code: impl AsRef<Self::BCode>) -> Result<()>;
 }
 
@@ -18,7 +19,8 @@ struct V8Vm {
 
 impl V8Vm {
     fn new() -> V8Vm {
-        let platform = v8::new_default_platform(0, false).make_shared();
+        let platform =
+            v8::new_default_platform(0 /* 0 gets number of cores */, false).make_shared();
         v8::V8::initialize_platform(platform);
         v8::V8::initialize();
 
@@ -43,20 +45,8 @@ impl Vm for V8Vm {
         let scope = &mut TryCatch::new(scope);
 
         let code = v8::String::new(scope, code).expect("unreasonably long code");
-
-        let script = if let Some(script) = Script::compile(scope, code, None) {
-            script
-        } else {
-            assert!(scope.has_caught());
-            return Err(exception_report(scope));
-        };
-
-        let res = if let Some(res) = script.run(scope) {
-            res
-        } else {
-            assert!(scope.has_caught());
-            return Err(exception_report(scope));
-        };
+        let script = Script::compile(scope, code, None).ok_or_else(|| exception_report(scope))?;
+        let res = script.run(scope).ok_or_else(|| exception_report(scope))?;
 
         println!("script result: {}", res.to_rust_string_lossy(scope));
 
@@ -65,6 +55,8 @@ impl Vm for V8Vm {
 }
 
 fn exception_report(try_catch: &mut TryCatch<HandleScope>) -> Report {
+    assert!(try_catch.has_caught());
+
     let mut buffer = String::with_capacity(100);
 
     let exception = try_catch.exception().unwrap();
