@@ -363,7 +363,6 @@ dependencies = [
  "deno_core",
  "serde",
  "serde_v8",
- "v8",
 ]
 
 [[package]]
@@ -694,19 +693,6 @@ dependencies = [
  "matches",
  "percent-encoding",
  "serde",
-]
-
-[[package]]
-name = "v8"
-version = "0.26.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b712cc9d45e5b170328282d057f17e56ddcc9f42ad4d8e5a0a4b380a7aec9dbd"
-dependencies = [
- "bitflags",
- "fslock",
- "lazy_static",
- "libc",
- "which",
 ]
 
 [[package]]
