@@ -1,38 +1,31 @@
 extern crate proc_macro;
-use proc_macro::TokenStream;
+use proc_macro::TokenStream as TokenStream1;
+use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{parse_macro_input, Ident, ItemFn};
+use syn::{parse_macro_input, FnArg, Ident, ItemFn, ReturnType};
 
 #[proc_macro_attribute]
-pub fn odra_word(args: TokenStream, body: TokenStream) -> TokenStream {
+pub fn odra_word(args: TokenStream1, body: TokenStream1) -> TokenStream1 {
     odra_parse_internal(args, body, false)
 }
 
 #[proc_macro_attribute]
-pub fn odra_macro(args: TokenStream, body: TokenStream) -> TokenStream {
+pub fn odra_macro(args: TokenStream1, body: TokenStream1) -> TokenStream1 {
     odra_parse_internal(args, body, true)
 }
 
-fn odra_parse_internal(_args: TokenStream, body: TokenStream, is_macro: bool) -> TokenStream {
+fn odra_parse_internal(_args: TokenStream1, body: TokenStream1, is_macro: bool) -> TokenStream1 {
     let func = parse_macro_input!(body as ItemFn);
     let name = func.sig.ident.clone();
     let struct_name = Ident::new(&format!("Word_{}", name), name.span());
-    let args = func
-        .sig
-        .inputs
-        .iter()
-        .map(|elem| elem.to_token_stream().to_string());
-    let outs = func.sig.output.to_token_stream().to_string();
 
     let stack_effect = if is_macro {
         quote!(crate::StackEffect::Dynamic)
     } else {
-        quote!(crate::StackEffect::Static {
-            inputs: vec![#(#args.into()),*],
-            outputs: vec![#outs.into()]
-        })
+        make_stack_effect(func.sig.inputs.iter(), &func.sig.output)
     };
 
+    // TODO: more resilient `crate`
     let expanded = quote! {
         #func
         #[allow(non_camel_case_types)]
@@ -61,5 +54,19 @@ fn odra_parse_internal(_args: TokenStream, body: TokenStream, is_macro: bool) ->
         };
     };
 
-    TokenStream::from(expanded)
+    TokenStream1::from(expanded)
+}
+
+fn make_stack_effect<'a>(
+    inputs: impl Iterator<Item = &'a FnArg>,
+    output: &ReturnType,
+) -> TokenStream {
+    // TODO: clean this up
+    let args = inputs.map(|elem| elem.to_token_stream().to_string());
+    let outs = output.to_token_stream().to_string();
+
+    quote!(crate::StackEffect::Static {
+        inputs: vec![#(#args.into()),*],
+        outputs: vec![#outs.into()]
+    })
 }
