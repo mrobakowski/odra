@@ -1,0 +1,25 @@
+{
+    "name": "vscode-odra",
+    "displayName": "vscode-odra",
+    "description": "Odra Language Syntax Higlighting",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.60.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "odra",
+            "aliases": ["Odra", "odra"],
+            "extensions": [".od",".odra"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "odra",
+            "scopeName": "source.odra",
+            "path": "./syntaxes/odra.tmLanguage.json"
+        }]
+    }
+}

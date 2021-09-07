@@ -1,0 +1,12 @@
+__js! {
+    compiler.bind_in_current_scope("macro:", compiler.builtin_macro)
+    compiler.bind_in_current_scope("bind!", compiler.builtin_bind)
+}
+
+macro: define: {
+    bind! { name block }
+    name compiler.set_definition_name
+    block compiler.eval
+    compiler.finish_definition
+}
+
