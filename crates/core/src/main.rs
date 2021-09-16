@@ -21,7 +21,7 @@ pub enum BCodeInstruction {
     /// LEAKY_ABSTRACTION: the string is a js expression for now
     Push(String),
     OdraCall(String), // TODO: those strings in the calls kinda suck, maybe they could be Global<Value>s (LEAKY_ABSTRACTION) and then simply invoked
-    JsCall { fn_name: String, args: Vec<String> },
+    JsCall { fn_name: String, num_args: u8 /* usize? nobody should need more than 255 arguments... */ },
 }
 
 fn main() -> Result<()> {

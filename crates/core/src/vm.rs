@@ -67,11 +67,35 @@ mod deno_vm {
 
         for instruction in code {
             match instruction {
-                crate::BCodeInstruction::Push(value_string) => {
-                    write!(buffer, "globalThis.odra_stack = odra_push(globalThis.odra_stack, {})", value_string).unwrap()
-                },
-                crate::BCodeInstruction::OdraCall(fn_name) => todo!(),
-                crate::BCodeInstruction::JsCall { fn_name, args } => todo!(),
+                crate::BCodeInstruction::Push(value_string) => writeln!(
+                    buffer,
+                    "globalThis.odra_stack = odra_push(globalThis.odra_stack, {})",
+                    value_string
+                )
+                .unwrap(),
+
+                crate::BCodeInstruction::OdraCall(fn_name) => writeln!(
+                    buffer,
+                    "globalThis.odra_stack = {}(globalThis.odra_stack)",
+                    fn_name
+                )
+                .unwrap(),
+
+                crate::BCodeInstruction::JsCall { fn_name, num_args } => {
+                    for i in 0..*num_args {
+                        writeln!(buffer, "let ${} = globalThis.odra_stack.value; globalThis.odra_stack = globalThis.odra_stack.next", i).unwrap();
+                    }
+                    write!(
+                        buffer,
+                        "globalThis.odra_stack = odra_push(globalThis.odra_stack, {}(",
+                        fn_name
+                    )
+                    .unwrap();
+                    for i in 0..*num_args {
+                        write!(buffer, "${},", i).unwrap();
+                    }
+                    writeln!(buffer, "))").unwrap();
+                }
             }
         }
 
