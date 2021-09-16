@@ -2,6 +2,7 @@
     "name": "vscode-odra",
     "displayName": "vscode-odra",
     "description": "Odra Language Syntax Higlighting",
+    "publisher": "mrobakowski",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.60.0"

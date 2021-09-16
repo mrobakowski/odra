@@ -34,7 +34,7 @@ fn odra_parse_internal(_args: TokenStream1, body: TokenStream1, is_macro: bool) 
             struct #struct_name;
 
             impl crate::Word for #struct_name {
-                fn exec(&self, compiler: &mut dyn crate::Compiler) {
+                fn exec(&self, compiler: &mut crate::Compiler) {
                     todo!();
                 }
 

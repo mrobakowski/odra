@@ -19,6 +19,7 @@ mod deno_vm {
         JsRuntime,
     };
     use std::borrow::Borrow;
+    use std::fmt::Write;
 
     pub struct Deno {
         runtime: JsRuntime,
@@ -26,7 +27,9 @@ mod deno_vm {
 
     impl Deno {
         pub fn new() -> Deno {
-            let runtime = JsRuntime::new(Default::default());
+            let mut runtime = JsRuntime::new(Default::default());
+            init_odra_stuff(&mut runtime).expect("Could not init the runtime");
+
             Deno { runtime }
         }
     }
@@ -34,13 +37,18 @@ mod deno_vm {
     impl Vm for Deno {
         fn run(&mut self, code: impl AsRef<BCode>) -> Result<()> {
             let code = code.as_ref();
+
+            let js_code = bcode_to_js(code);
+            eprintln!("js code:\n{}", js_code);
+
             let res = self
                 .runtime
-                .execute_script("[odra]", code)
+                .execute_script("[odra]", &js_code)
                 .map_err(anyhow_to_eyre)?;
+
             let res: &Value = res.borrow();
 
-            println!(
+            eprintln!(
                 "script result: {}",
                 res.to_rust_string_lossy(&mut self.runtime.handle_scope())
             );
@@ -52,5 +60,36 @@ mod deno_vm {
     fn anyhow_to_eyre(err: AnyError) -> Report {
         let js_error: JsError = err.downcast().unwrap();
         Report::new(js_error)
+    }
+
+    fn bcode_to_js(code: &BCode) -> String {
+        let mut buffer = String::new();
+
+        for instruction in code {
+            match instruction {
+                crate::BCodeInstruction::Push(value_string) => {
+                    write!(buffer, "globalThis.odra_stack = odra_push(globalThis.odra_stack, {})", value_string).unwrap()
+                },
+                crate::BCodeInstruction::OdraCall(fn_name) => todo!(),
+                crate::BCodeInstruction::JsCall { fn_name, args } => todo!(),
+            }
+        }
+
+        buffer
+    }
+
+    fn init_odra_stuff(runtime: &mut JsRuntime) -> Result<()> {
+        runtime
+            .execute_script("[odra init]", r##"
+                // TODO: we should use some chunked immutable stack instead of a linked list for performance
+                globalThis.odra_stack = null;
+                function odra_push(stack, value) {
+                    return { value, next: stack }
+                }
+
+                globalThis.compiler = {} // TODO: compiler API, should be equivalent from rust and js sides
+            "##)
+            .map_err(anyhow_to_eyre)?;
+        Ok(())
     }
 }

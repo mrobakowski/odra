@@ -25,7 +25,7 @@
 			"patterns": [
 				{
 					"name": "keyword.control.odra",
-					"match": "\\b[^\\s:!]+[:!]((?=\\s)|$)"
+					"match": "[^\\s:!]+[:!]((?=\\s)|$)"
 				}
 			]
 		},
