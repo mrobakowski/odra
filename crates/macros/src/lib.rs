@@ -34,7 +34,7 @@ fn odra_parse_internal(_args: TokenStream1, body: TokenStream1, is_macro: bool) 
             struct #struct_name;
 
             impl crate::Word for #struct_name {
-                fn exec(&self, compiler: &mut crate::Compiler) {
+                fn exec(&self, vm: &mut crate::Vm) {
                     todo!();
                 }
 
@@ -46,6 +46,10 @@ fn odra_parse_internal(_args: TokenStream1, body: TokenStream1, is_macro: bool) 
 
                 fn stack_effect(&self) -> crate::StackEffect {
                     #stack_effect
+                }
+
+                fn register(&self, vm: &mut crate::Vm) {
+                    vm.register(word, #name)
                 }
             };
 

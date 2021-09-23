@@ -1,14 +1,16 @@
 use linkme::distributed_slice;
 use macros::odra_word;
 
-use crate::compiler::Compiler;
 use std::fmt::Debug;
 
+use crate::Vm;
+
 pub trait Word: Sync + Send {
-    fn exec(&self, compiler: &mut Compiler);
+    fn exec(&self, vm: &mut Vm);
     fn name(&self) -> &str;
     fn is_macro(&self) -> bool;
     fn stack_effect(&self) -> StackEffect;
+    fn register(&self, vm: &mut Vm);
 }
 
 impl Debug for dyn Word {
@@ -31,8 +33,13 @@ pub enum StackEffect {
 
 #[distributed_slice]
 pub static WORDS: [&'static dyn Word] = [..];
+pub fn register_all_builtin_words(vm: &mut Vm) {
+    for word in WORDS {
+        word.register(vm)
+    }
+}
 
 #[odra_word]
-fn add(a: i64, b: i64) -> i64 {
+fn add(a: f64, b: f64) -> f64 {
     a + b
 }

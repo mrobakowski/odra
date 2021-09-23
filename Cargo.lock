@@ -101,23 +101,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "deno_core"
-version = "0.98.0"
+name = "compact_str"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6abd960570517e239f7b2f10388353186abf46d15982230fa559b8153d44c67f"
+checksum = "e21ca434f8108ce09fd996dc1c5baae71c8aed4a240a399ecc13982b8b484f30"
+dependencies = [
+ "serde",
+ "static_assertions",
+]
+
+[[package]]
+name = "deno_core"
+version = "0.100.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51fa6cc6cd4c826698514d82a972cf33c74e7102ae7e400b44c3fc8084507ec0"
 dependencies = [
  "anyhow",
  "futures",
  "indexmap",
  "lazy_static",
- "libc",
  "log",
  "parking_lot",
  "pin-project",
- "rusty_v8",
+ "rusty_v8 0.28.0",
  "serde",
  "serde_json",
- "serde_v8",
+ "serde_v8 0.11.0",
  "url",
 ]
 
@@ -372,9 +381,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.99"
+version = "0.2.102"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7f823d141fe0a24df1e23b4af4e3c7ba9e5966ec514ea068c93024aa7deb765"
+checksum = "a2a5ac8f984bfcf3a823267e5fde638acc3325f6496633a5da6bb6eb2171e103"
 
 [[package]]
 name = "linkme"
@@ -490,12 +499,13 @@ name = "odra"
 version = "0.1.0"
 dependencies = [
  "color-eyre",
+ "compact_str",
  "deno_core",
  "linkme",
  "macros",
  "rustyline",
  "serde",
- "serde_v8",
+ "serde_v8 0.13.0",
 ]
 
 [[package]]
@@ -640,9 +650,22 @@ checksum = "dead70b0b5e03e9c814bcb6b01e03e68f7c57a80aa48c72ec92152ab3e818d49"
 
 [[package]]
 name = "rusty_v8"
-version = "0.26.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ced8bcb4fdc4820792030377a71cedbde5b49b340c2174ee0ea368ef244bf8f1"
+checksum = "d7d44250ec4d38c9640cd3e3be9375466966593608ab644d9b37d36acbebc1a7"
+dependencies = [
+ "bitflags",
+ "fslock",
+ "lazy_static",
+ "libc",
+ "which",
+]
+
+[[package]]
+name = "rusty_v8"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cbceb7583f5db95a57e4cbf43847f5cc95dedc60671d7f6b6ca7578caa058ea9"
 dependencies = [
  "bitflags",
  "fslock",
@@ -689,18 +712,18 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "serde"
-version = "1.0.127"
+version = "1.0.130"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f03b9878abf6d14e6779d3f24f07b2cfa90352cfec4acc5aab8f1ac7f146fae8"
+checksum = "f12d06de37cf59146fbdecab66aa99f9fe4f78722e3607577a5375d66bd0c913"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.127"
+version = "1.0.130"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a024926d3432516606328597e0f224a51355a493b49fdd67e9209187cbe55ecc"
+checksum = "d7bc1a1ab1961464eae040d96713baa5a724a8152c1222492465b54322ec508b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -721,11 +744,21 @@ dependencies = [
 
 [[package]]
 name = "serde_v8"
-version = "0.9.3"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5ce7662cda194ff443bddf146c952e83075889590838cd41df768fba7d152d0"
+checksum = "77240c6cc91c6ffcce6900d8b4ce5d0966a0d2f8614dd43d1948b52ebd915071"
 dependencies = [
- "rusty_v8",
+ "rusty_v8 0.28.0",
+ "serde",
+]
+
+[[package]]
+name = "serde_v8"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fd01a049079c0355135da2d05463ecc21b8af584f3a30288812643c0935960e"
+dependencies = [
+ "rusty_v8 0.30.0",
  "serde",
 ]
 
@@ -749,6 +782,12 @@ name = "smallvec"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe0f37c9e8f3c5a4a66ad655a93c74daac4ad00c441533bf5c6e7990bb42604e"
+
+[[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "str-buf"

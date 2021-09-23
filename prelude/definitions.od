@@ -4,7 +4,7 @@ __js! {
 }
 
 macro: define: {
-    =! { name block }
+    => { name block }
     name compiler.set_definition_name
     block compiler.eval
     compiler.finish_definition
