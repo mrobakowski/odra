@@ -1,21 +1,23 @@
+use std::collections::VecDeque;
+
 use crate::Result;
 use compact_str::CompactStr;
 
 pub struct InputGobbler {
     readline: rustyline::Editor<()>, // TODO: a variant for files would be useful as well
-    tokens: Vec<CompactStr>,             // TODO: optimize allocations
+    tokens: VecDeque<CompactStr>,    // TODO: optimize allocations
 }
 
 impl InputGobbler {
     pub fn new() -> InputGobbler {
         let readline = rustyline::Editor::new();
-        let tokens = Vec::with_capacity(128);
+        let tokens = VecDeque::with_capacity(128);
         InputGobbler { readline, tokens }
     }
 
     pub fn next(&mut self) -> Result<Option<CompactStr>> {
         loop {
-            if let Some(token) = self.tokens.pop() {
+            if let Some(token) = self.tokens.pop_front() {
                 return Ok(Some(token));
             }
 
@@ -25,8 +27,14 @@ impl InputGobbler {
             match self.readline.readline("odra>") {
                 Ok(line) => self.tokens.extend(tokenize(&line)),
                 Err(Eof | Interrupted) => return Ok(None),
-                Err(e) => Err(e)?
+                Err(e) => Err(e)?,
             }
+        }
+    }
+
+    pub fn push_front(&mut self, words: impl DoubleEndedIterator<Item = CompactStr>) {
+        for word in words.rev() {
+            self.tokens.push_front(word) // TODO: why isn't there a push_front_all or sth???
         }
     }
 }
