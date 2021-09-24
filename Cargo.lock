@@ -501,6 +501,7 @@ dependencies = [
  "color-eyre",
  "compact_str",
  "deno_core",
+ "eyre",
  "linkme",
  "macros",
  "rustyline",

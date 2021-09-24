@@ -48,7 +48,7 @@ fn odra_parse_internal(_args: TokenStream1, body: TokenStream1, is_macro: bool) 
                     #stack_effect
                 }
 
-                fn register(&self, vm: &mut crate::Vm) {
+                fn register(&self, vm: &mut crate::Vm) -> Result<(), color_eyre::Report> {
                     vm.register(word, #name)
                 }
             };

@@ -4,6 +4,7 @@ use deno_core::{
     error::{AnyError, JsError},
     JsRuntime,
 };
+use eyre::eyre;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::Word;
@@ -17,7 +18,7 @@ impl Vm {
     pub fn new() -> Vm {
         let mut runtime = JsRuntime::new(Default::default());
         init_odra_stuff(&mut runtime).expect("Could not init the runtime");
-        let vocabulary = Vocabulary;
+        let vocabulary = Vocabulary::empty();
 
         Vm {
             runtime,
@@ -25,7 +26,7 @@ impl Vm {
         }
     }
 
-    pub fn register<F, Args>(&mut self, word: &dyn Word, f: F)
+    pub fn register<F, Args>(&mut self, word: &'static dyn Word, f: F) -> Result<()>
     where
         F: Fn<Args> + 'static,
         Args: DeserializeOwned,
@@ -41,6 +42,8 @@ impl Vm {
 
     pub fn run(&mut self, unresolved_word: CompactStr) -> Result<()> {
         let word = self.vocabulary.resolve(unresolved_word)?;
+
+        word.exec(self);
 
         Ok(())
     }
@@ -69,16 +72,83 @@ fn init_odra_stuff(runtime: &mut JsRuntime) -> Result<()> {
 use vocabulary::Vocabulary;
 mod vocabulary {
     use super::*;
-    pub struct Vocabulary;
+    use std::{
+        collections::{HashMap},
+        hash::{Hash, Hasher},
+        sync::{Arc, RwLock, Weak},
+    };
+
+    // TODO: can we get away without Arcs here?
+    type VocabRef = Arc<RwLock<VocabInner>>;
+    type VocabWeak = Weak<RwLock<VocabInner>>;
+    pub struct Vocabulary {
+        all_vocabs: HashMap<CompactStr, VocabRef>,
+        current: VocabRef,
+        root: VocabRef,
+    }
+
+    struct VocabInner {
+        /// must be unique
+        id: CompactStr,
+        parent: VocabWeak,
+        words: HashMap<CompactStr, (&'static dyn Word, Entry)>,
+        children: HashMap<CompactStr, VocabRef>,
+    }
+
+    impl Eq for VocabInner {}
+    impl PartialEq for VocabInner {
+        fn eq(&self, other: &Self) -> bool {
+            self.id == other.id
+        }
+    }
+
+    impl Hash for VocabInner {
+        fn hash<H: Hasher>(&self, state: &mut H) {
+            self.id.hash(state);
+        }
+    }
+
     pub enum Entry {
         Op(usize),
     }
 
     impl Vocabulary {
-        pub fn resolve(&self, unresolved_word: CompactStr) -> Result<()> {
-            Ok(())
+        pub fn empty() -> Vocabulary {
+            let key: CompactStr = "root".into();
+            let root = Arc::new(RwLock::new(VocabInner {
+                id: key.clone(),
+                parent: Weak::new(),
+                words: HashMap::new(),
+                children: HashMap::new(),
+            }));
+            let current = Arc::clone(&root);
+            let all_vocabs = HashMap::from([(key, Arc::clone(&root))]);
+
+            Vocabulary {
+                all_vocabs,
+                current,
+                root,
+            }
         }
 
-        pub fn append(&mut self, word: &dyn Word, entry: Entry) {}
+        pub fn resolve(&self, unresolved_word: CompactStr) -> Result<&'static dyn Word> {
+            self.current
+                .read()
+                .map_err(|_| eyre!("vocab lock poisoned"))?
+                .words
+                .get(&unresolved_word)
+                .map(|(word, _)| *word)
+                .ok_or(eyre!("could not resolve the word"))
+        }
+
+        pub fn append(&mut self, word: &'static dyn Word, entry: Entry) -> Result<()> {
+            self.current
+                .write()
+                .map_err(|_| eyre!("vocab lock poisoned"))?
+                .words
+                .insert(word.name().into(), (word, entry));
+
+            Ok(())
+        }
     }
 }
