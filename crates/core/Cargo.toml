@@ -6,12 +6,12 @@ edition = "2018"  # TODO: 2021 when rust-analyzer supports it
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-deno_core = "0.100.0"
 serde = "1.0.127"
-serde_v8 = "0.13.0"
 color-eyre = "0.5.11"
 eyre = "0.6.5"
 linkme = "0.2.6"
 macros = { path = "../macros" }
 rustyline = "9.0.0"
 compact_str = { version = "0.1.0", features = ["serde"] }
+im = "15.0.0"
+gcmodule = "0.3.3"

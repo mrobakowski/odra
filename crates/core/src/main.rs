@@ -6,6 +6,7 @@
 mod input_gobbler;
 mod vm;
 mod words;
+mod value;
 
 use color_eyre::Result;
 
@@ -13,6 +14,7 @@ pub use input_gobbler::InputGobbler;
 pub use vm::Vm;
 pub use words::StackEffect;
 pub use words::Word;
+pub use value::OdraValue;
 
 fn main() -> Result<()> {
     color_eyre::install()?;

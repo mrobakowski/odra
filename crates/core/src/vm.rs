@@ -1,27 +1,34 @@
-use color_eyre::{Report, Result};
+use color_eyre::{ Result};
 use compact_str::CompactStr;
-use deno_core::{
-    error::{AnyError, JsError},
-    JsRuntime,
-};
-use eyre::eyre;
+use eyre::{eyre, WrapErr};
 use serde::{de::DeserializeOwned, Serialize};
 
+use crate::OdraValue;
 use crate::Word;
 
 pub struct Vm {
-    runtime: JsRuntime,
+    main_fibre: Fibre,
+    other_fibres: Vec<Fibre>,
     vocabulary: Vocabulary,
+}
+
+struct Fibre {
+    name: CompactStr,
+    stack: im::Vector<OdraValue>,
 }
 
 impl Vm {
     pub fn new() -> Vm {
-        let mut runtime = JsRuntime::new(Default::default());
-        init_odra_stuff(&mut runtime).expect("Could not init the runtime");
+        let main_fibre = Fibre {
+            name: "main".into(),
+            stack: im::Vector::new(),
+        };
+        let other_fibres = vec![];
         let vocabulary = Vocabulary::empty();
 
         Vm {
-            runtime,
+            main_fibre,
+            other_fibres,
             vocabulary,
         }
     }
@@ -32,14 +39,12 @@ impl Vm {
         Args: DeserializeOwned,
         F::Output: Serialize + 'static,
     {
-        let op_id = self.runtime.register_op(
-            word.name(),
-            deno_core::op_sync(move |_, a, _: ()| Ok(f.call(a))),
-        );
-
-        self.vocabulary.append(word, vocabulary::Entry::Op(op_id))
+        self.vocabulary
+            .append(word)
+            .wrap_err_with(|| format!("registering word `{}`", word.name()))
     }
 
+    #[inline]
     pub fn run(&mut self, unresolved_word: CompactStr) -> Result<()> {
         let word = self.vocabulary.resolve(unresolved_word)?;
 
@@ -49,31 +54,11 @@ impl Vm {
     }
 }
 
-fn anyhow_to_eyre(err: AnyError) -> Report {
-    let js_error: JsError = err.downcast().unwrap();
-    Report::new(js_error)
-}
-
-fn init_odra_stuff(runtime: &mut JsRuntime) -> Result<()> {
-    runtime
-        .execute_script("[odra init]", r##"
-            // TODO: we should use some chunked immutable stack instead of a linked list for performance
-            globalThis.odra_stack = null;
-            function odra_push(stack, value) {
-                return { value, next: stack }
-            }
-
-            globalThis.compiler = {} // TODO: compiler API, should be equivalent from rust and js sides
-        "##)
-        .map_err(anyhow_to_eyre)?;
-    Ok(())
-}
-
 use vocabulary::Vocabulary;
 mod vocabulary {
     use super::*;
     use std::{
-        collections::{HashMap},
+        collections::HashMap,
         hash::{Hash, Hasher},
         sync::{Arc, RwLock, Weak},
     };
@@ -91,7 +76,7 @@ mod vocabulary {
         /// must be unique
         id: CompactStr,
         parent: VocabWeak,
-        words: HashMap<CompactStr, (&'static dyn Word, Entry)>,
+        words: HashMap<CompactStr, &'static dyn Word>,
         children: HashMap<CompactStr, VocabRef>,
     }
 
@@ -106,10 +91,6 @@ mod vocabulary {
         fn hash<H: Hasher>(&self, state: &mut H) {
             self.id.hash(state);
         }
-    }
-
-    pub enum Entry {
-        Op(usize),
     }
 
     impl Vocabulary {
@@ -137,16 +118,16 @@ mod vocabulary {
                 .map_err(|_| eyre!("vocab lock poisoned"))?
                 .words
                 .get(&unresolved_word)
-                .map(|(word, _)| *word)
+                .map(|x| *x)
                 .ok_or(eyre!("could not resolve the word"))
         }
 
-        pub fn append(&mut self, word: &'static dyn Word, entry: Entry) -> Result<()> {
+        pub fn append(&mut self, word: &'static dyn Word) -> Result<()> {
             self.current
                 .write()
                 .map_err(|_| eyre!("vocab lock poisoned"))?
                 .words
-                .insert(word.name().into(), (word, entry));
+                .insert(word.name().into(), word);
 
             Ok(())
         }
