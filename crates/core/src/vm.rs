@@ -73,7 +73,7 @@ mod vocabulary {
     }
 
     struct VocabInner {
-        /// must be unique
+        /// must be unique, TODO: semantic unsafe constructor?
         id: CompactStr,
         parent: VocabWeak,
         words: HashMap<CompactStr, &'static dyn Word>,

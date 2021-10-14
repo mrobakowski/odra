@@ -23,7 +23,7 @@ fn main() -> Result<()> {
 
     let mut vm = Vm::new();
     let mut gobbler = InputGobbler::new();
-    words::register_all_builtin_words(&mut vm);
+    words::register_all_builtin_words(&mut vm)?;
 
     loop {
         match gobbler.next()? {
