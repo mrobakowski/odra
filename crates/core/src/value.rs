@@ -1,4 +1,6 @@
+use color_eyre::Result;
 use compact_str::CompactStr;
+use eyre::eyre;
 use gcmodule::{ThreadedCc, Trace};
 use std::{fmt::Debug, hash::Hash, ops::Deref};
 
@@ -88,3 +90,54 @@ impl Trace for OdraValue {
         }
     }
 }
+
+#[derive(Debug, Clone)]
+pub enum OdraType {
+    Number,
+    String,
+    OtherNamed(CompactStr),
+}
+
+pub trait AsOdraValue {
+    fn as_odra_value(self) -> OdraValue;
+    fn odra_type() -> OdraType;
+}
+
+pub trait FromOdraValue
+where
+    Self: Sized,
+{
+    fn from_odra_value(odra_value: OdraValue) -> Result<Self>;
+}
+
+macro_rules! impl_numbers {
+    ($($t:ty),*) => {
+        $(
+            impl AsOdraValue for $t {
+                fn as_odra_value(self) -> OdraValue {
+                    // NOTE: `as` conversion, can lose precision I guess
+                    OdraValue::Number(self as f64)
+                }
+
+                fn odra_type() -> OdraType { OdraType::Number }
+            }
+
+            impl FromOdraValue for $t {
+                fn from_odra_value(odra_value: OdraValue) -> Result<Self> {
+                    if let OdraValue::Number(f) = odra_value {
+                        let i = f as $t;
+                        if f == i as f64 {
+                            Ok(i)
+                        } else {
+                            Err(eyre!("{} cannot be accurately represented as an integer"))
+                        }
+                    } else {
+                        Err(eyre!("Could not convert {:?} to number", odra_value))
+                    }
+                }
+            }
+        )*
+    };
+}
+
+impl_numbers!(u8, u16, u32, u64, i8, i16, i32, i64, f64);

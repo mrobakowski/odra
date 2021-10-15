@@ -3,8 +3,8 @@ use macros::odra_word;
 use std::fmt::Debug;
 use color_eyre::Result;
 
-
 use crate::Vm;
+use crate::OdraType;
 
 pub trait Word: Sync + Send {
     fn exec(&self, vm: &mut Vm);
@@ -27,8 +27,8 @@ impl Debug for dyn Word {
 pub enum StackEffect {
     Dynamic,
     Static {
-        inputs: Vec<String>,
-        outputs: Vec<String>,
+        inputs: Vec<OdraType>,
+        outputs: Vec<OdraType>,
     },
 }
 

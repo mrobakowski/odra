@@ -1,8 +1,3 @@
-__js! {
-    compiler.bind_in_current_scope("macro:", compiler.builtin_macro)
-    compiler.bind_in_current_scope("=!", compiler.builtin_bind)
-}
-
 macro: define: {
     => { name block }
     name compiler.set_definition_name

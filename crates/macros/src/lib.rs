@@ -2,7 +2,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::{Span, TokenStream};
 use proc_macro_crate::{crate_name, FoundCrate};
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::{parse_macro_input, FnArg, Ident, ItemFn, ReturnType};
 
 #[proc_macro_attribute]
@@ -67,15 +67,24 @@ fn odra_parse_internal(_args: TokenStream1, body: TokenStream1, is_macro: bool) 
 fn make_stack_effect<'a>(
     inputs: impl Iterator<Item = &'a FnArg>,
     output: &ReturnType,
-    odra: &TokenStream
+    odra: &TokenStream,
 ) -> TokenStream {
-    // TODO: clean this up
-    let args = inputs.map(|elem| elem.to_token_stream().to_string());
-    let outs = output.to_token_stream().to_string();
+    let args = inputs.map(|elem| match elem {
+        FnArg::Receiver(_) => panic!("unsupported self argument"),
+        FnArg::Typed(pat) => {
+            let ty = &pat.ty;
+            quote!(<#ty as #odra::AsOdraValue>::odra_type())
+        }
+    });
+
+    let outs = match output {
+        ReturnType::Default => quote!(vec![]),
+        ReturnType::Type(_, ty) => quote!(vec![<#ty as #odra::AsOdraValue>::odra_type()]),
+    };
 
     quote!(#odra::StackEffect::Static {
-        inputs: vec![#(#args.into()),*],
-        outputs: vec![#outs.into()]
+        inputs: vec![#(#args),*],
+        outputs: #outs
     })
 }
 
