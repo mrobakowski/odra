@@ -52,7 +52,7 @@ fn odra_parse_internal(_args: TokenStream1, body: TokenStream1, is_macro: bool) 
                 }
 
                 fn register(&self, vm: &mut #odra::Vm) -> Result<(), #color_eyre::Report> {
-                    vm.register(word, #name)
+                    vm.register(word)
                 }
             };
 

@@ -1,7 +1,6 @@
-use color_eyre::{ Result};
+use color_eyre::Result;
 use compact_str::CompactStr;
 use eyre::{eyre, WrapErr};
-use serde::{de::DeserializeOwned, Serialize};
 
 use crate::OdraValue;
 use crate::Word;
@@ -33,12 +32,7 @@ impl Vm {
         }
     }
 
-    pub fn register<F, Args>(&mut self, word: &'static dyn Word, f: F) -> Result<()>
-    where
-        F: Fn<Args> + 'static,
-        Args: DeserializeOwned,
-        F::Output: Serialize + 'static,
-    {
+    pub fn register(&mut self, word: &'static dyn Word) -> Result<()> {
         self.vocabulary
             .append(word)
             .wrap_err_with(|| format!("registering word `{}`", word.name()))
