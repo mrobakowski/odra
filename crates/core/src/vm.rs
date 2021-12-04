@@ -2,18 +2,25 @@ use color_eyre::Result;
 use compact_str::CompactStr;
 use eyre::{eyre, WrapErr};
 
+use crate::AsOdraValue;
+use crate::FromOdraValue;
 use crate::OdraValue;
 use crate::Word;
 
 pub struct Vm {
-    main_fibre: Fibre,
+    pub main_fibre: Fibre,
     other_fibres: Vec<Fibre>,
     vocabulary: Vocabulary,
+    word_builder: WordBuilder,
 }
 
-struct Fibre {
+pub struct Fibre {
     name: CompactStr,
-    stack: im::Vector<OdraValue>,
+    pub stack: im::Vector<OdraValue>,
+}
+
+struct WordBuilder {
+    thunks: Vec<Box<dyn Fn(&mut Vm)>>,
 }
 
 impl Vm {
@@ -24,11 +31,13 @@ impl Vm {
         };
         let other_fibres = vec![];
         let vocabulary = Vocabulary::empty();
+        let word_builder = WordBuilder { thunks: vec![] };
 
         Vm {
             main_fibre,
             other_fibres,
             vocabulary,
+            word_builder,
         }
     }
 
@@ -46,6 +55,27 @@ impl Vm {
 
         Ok(())
     }
+
+    pub fn pop_from_stack<T: FromOdraValue>(&mut self) -> T {
+        // TODO: correct fibre... this method should be on the fibre? run & exec should be on the fibre maybe?
+        FromOdraValue::from_odra_value(self.main_fibre.stack.pop_back().expect("stack empty"))
+            .expect("conversion failed")
+    }
+
+    pub fn push_onto_stack<T: AsOdraValue>(&mut self, value: T) {
+        self.main_fibre.stack.push_back(value.as_odra_value());
+    }
+
+    pub fn append_thunk(&mut self, f: impl Fn(&mut Vm) + 'static) {
+        self.word_builder.thunks.push(Box::new(f))
+    }
+
+    pub fn run_word_being_built(&mut self) {
+        let thunks = std::mem::take(&mut self.word_builder.thunks);
+        for thunk in thunks {
+            thunk(self)
+        }
+    } 
 }
 
 use vocabulary::Vocabulary;
@@ -70,7 +100,7 @@ mod vocabulary {
         /// must be unique, TODO: semantic unsafe constructor?
         id: CompactStr,
         parent: VocabWeak,
-        words: HashMap<CompactStr, &'static dyn Word>,
+        words: HashMap<CompactStr, &'static dyn Word>, // TODO: leakage!
         children: HashMap<CompactStr, VocabRef>,
     }
 

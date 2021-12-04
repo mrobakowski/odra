@@ -1,3 +1,5 @@
+#![feature(let_else)]
+
 extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::{Span, TokenStream};
@@ -7,7 +9,9 @@ use syn::{parse_macro_input, FnArg, Ident, ItemFn, ReturnType};
 
 #[proc_macro_attribute]
 pub fn odra_word(args: TokenStream1, body: TokenStream1) -> TokenStream1 {
-    odra_parse_internal(args, body, false)
+    let res = odra_parse_internal(args, body, false);
+    eprintln!("{res}");
+    res
 }
 
 #[proc_macro_attribute]
@@ -29,6 +33,45 @@ fn odra_parse_internal(_args: TokenStream1, body: TokenStream1, is_macro: bool) 
         make_stack_effect(func.sig.inputs.iter(), &func.sig.output, &odra)
     };
 
+    let (args, arg_extraction): (Vec<_>, Vec<_>) = func
+        .sig
+        .inputs
+        .iter()
+        .enumerate()
+        .map(|(num, arg)| {
+            let FnArg::Typed(arg) = arg else { panic!("self arguments not supported") };
+            let typ = &arg.ty;
+
+            let arg = Ident::new(&format!("arg_{num}"), Span::call_site());
+            let extraction = quote! {
+                // SAFETY: ¯\_(ツ)_/¯
+                let #arg = {
+                    use #odra::spec_get_vm::*;
+                    // hack for autoref specialization
+                    // see https://github.com/dtolnay/case-studies/blob/master/autoref-specialization/README.md
+                    // and odra/crates/core/src/spec_get_vm.rs
+                    let marker: std::marker::PhantomData<#typ> = Default::default();
+                    let res = (&marker).get_access_token().get(vm);
+
+                    res
+                };
+            };
+
+            (arg, extraction)
+        })
+        .unzip();
+
+    let exec_impl = if is_macro {
+        quote!(self.real_exec(vm))
+    } else {
+        quote!(vm.append_thunk(move |vm1| self.real_exec(vm1)))
+    };
+
+    let push_onto_stack = match func.sig.output {
+        ReturnType::Default => quote!(),
+        _ => quote!(vm.push_onto_stack(res);),
+    };
+
     let expanded = quote! {
         #func
         #[allow(non_camel_case_types)]
@@ -37,8 +80,15 @@ fn odra_parse_internal(_args: TokenStream1, body: TokenStream1, is_macro: bool) 
             struct #struct_name;
 
             impl #odra::Word for #struct_name {
-                fn exec(&self, vm: &mut #odra::Vm) {
-                    todo!();
+                fn exec(&'static self, vm: &mut Vm) {
+                    #exec_impl
+                }
+
+                fn real_exec(&self, vm: &mut #odra::Vm) {
+                    #(#arg_extraction)*
+                    let res = #name(#(#args),*);
+
+                    #push_onto_stack
                 }
 
                 fn name(&self) -> &str {
@@ -56,7 +106,7 @@ fn odra_parse_internal(_args: TokenStream1, body: TokenStream1, is_macro: bool) 
                 }
             };
 
-            #[linkme::distributed_slice(WORDS)]
+            #[linkme::distributed_slice(#odra::words::WORDS)]
             static word: &'static dyn #odra::Word = &#struct_name;
         };
     };
@@ -73,17 +123,19 @@ fn make_stack_effect<'a>(
         FnArg::Receiver(_) => panic!("unsupported self argument"),
         FnArg::Typed(pat) => {
             let ty = &pat.ty;
-            quote!(<#ty as #odra::AsOdraValue>::odra_type())
+            quote!(<#ty as #odra::AsOdraType>::odra_type())
         }
     });
 
     let outs = match output {
         ReturnType::Default => quote!(vec![]),
-        ReturnType::Type(_, ty) => quote!(vec![<#ty as #odra::AsOdraValue>::odra_type()]),
+        ReturnType::Type(_, ty) => {
+            quote!(<#ty as #odra::AsOdraType>::odra_type().into_iter().collect())
+        }
     };
 
     quote!(#odra::StackEffect::Static {
-        inputs: vec![#(#args),*],
+        inputs: std::array::IntoIter::new([#(#args),*]).filter_map(|x| x).collect(),
         outputs: #outs
     })
 }

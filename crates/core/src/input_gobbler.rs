@@ -16,6 +16,7 @@ impl InputGobbler {
     }
 
     pub fn next(&mut self) -> Result<Option<CompactStr>> {
+        let mut num = 0;
         loop {
             if let Some(token) = self.tokens.pop_front() {
                 return Ok(Some(token));
@@ -24,11 +25,13 @@ impl InputGobbler {
             use rustyline::error::ReadlineError::{Eof, Interrupted};
             // we ran out of tokens, time to gobble some up
             // TODO: this is probably too simplistic / wrong
-            match self.readline.readline("odra>") {
+            match self.readline.readline(&format!("odra:{num}> ")) {
                 Ok(line) => self.tokens.extend(tokenize(&line)),
                 Err(Eof | Interrupted) => return Ok(None),
                 Err(e) => Err(e)?,
             }
+
+            num += 1;
         }
     }
 

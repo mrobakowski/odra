@@ -1,13 +1,15 @@
+use color_eyre::Result;
 use linkme::distributed_slice;
+use macros::odra_macro;
 use macros::odra_word;
 use std::fmt::Debug;
-use color_eyre::Result;
 
-use crate::Vm;
 use crate::OdraType;
+use crate::Vm;
 
 pub trait Word: Sync + Send {
-    fn exec(&self, vm: &mut Vm);
+    fn exec(&'static self, vm: &mut Vm);
+    fn real_exec(&self, vm: &mut Vm);
     fn name(&self) -> &str;
     fn is_macro(&self) -> bool;
     fn stack_effect(&self) -> StackEffect;
@@ -45,4 +47,25 @@ pub fn register_all_builtin_words(vm: &mut Vm) -> Result<()> {
 #[odra_word]
 fn add(a: f64, b: f64) -> f64 {
     a + b
+}
+
+#[odra_word]
+fn one() -> f64 {
+    1.0
+}
+
+#[odra_word]
+fn two() -> f64 {
+    2.0
+}
+
+#[odra_word]
+fn print_stack(vm: &mut Vm) {
+    let stack = &vm.main_fibre.stack;
+    println!("{stack:?}");
+}
+
+#[odra_macro]
+fn run(vm: &mut Vm) {
+    vm.run_word_being_built()
 }

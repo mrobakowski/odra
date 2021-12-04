@@ -2,8 +2,11 @@
 #![feature(try_blocks)]
 #![feature(unboxed_closures)]
 #![feature(fn_traits)]
+#![feature(const_type_id)]
+#![feature(generic_associated_types)]
 
 mod input_gobbler;
+mod spec_get_vm;
 mod value;
 mod vm;
 mod words;
@@ -13,7 +16,7 @@ use color_eyre::Result;
 pub use input_gobbler::InputGobbler;
 pub use value::OdraType;
 pub use value::OdraValue;
-pub use value::{FromOdraValue, AsOdraValue};
+pub use value::{AsOdraValue, FromOdraValue, AsOdraType};
 pub use vm::Vm;
 pub use words::StackEffect;
 pub use words::Word;

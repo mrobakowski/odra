@@ -4,6 +4,8 @@ use eyre::eyre;
 use gcmodule::{ThreadedCc, Trace};
 use std::{fmt::Debug, hash::Hash, ops::Deref};
 
+use crate::Vm;
+
 // TODO: lots of locking here
 
 #[derive(Clone, Debug, PartialEq)]
@@ -98,9 +100,18 @@ pub enum OdraType {
     OtherNamed(CompactStr),
 }
 
-pub trait AsOdraValue {
+pub trait AsOdraValue: AsOdraType {
     fn as_odra_value(self) -> OdraValue;
-    fn odra_type() -> OdraType;
+}
+
+pub trait AsOdraType {
+    fn odra_type() -> Option<OdraType>;
+}
+
+impl AsOdraType for &mut Vm {
+    fn odra_type() -> Option<OdraType> {
+        None
+    }
 }
 
 pub trait FromOdraValue
@@ -113,13 +124,15 @@ where
 macro_rules! impl_numbers {
     ($($t:ty),*) => {
         $(
+            impl AsOdraType for $t {
+                fn odra_type() -> Option<OdraType> { Some(OdraType::Number) }
+            }
+
             impl AsOdraValue for $t {
                 fn as_odra_value(self) -> OdraValue {
                     // NOTE: `as` conversion, can lose precision I guess
                     OdraValue::Number(self as f64)
                 }
-
-                fn odra_type() -> OdraType { OdraType::Number }
             }
 
             impl FromOdraValue for $t {
