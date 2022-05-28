@@ -1,11 +1,11 @@
 use std::collections::VecDeque;
 
 use crate::Result;
-use compact_str::CompactStr;
+use compact_str::CompactString;
 
 pub struct InputGobbler {
     readline: rustyline::Editor<()>, // TODO: a variant for files would be useful as well
-    tokens: VecDeque<CompactStr>,    // TODO: optimize allocations
+    tokens: VecDeque<CompactString>,    // TODO: optimize allocations
 }
 
 impl InputGobbler {
@@ -15,7 +15,7 @@ impl InputGobbler {
         InputGobbler { readline, tokens }
     }
 
-    pub fn next(&mut self) -> Result<Option<CompactStr>> {
+    pub fn next(&mut self) -> Result<Option<CompactString>> {
         let mut num = 0;
         loop {
             if let Some(token) = self.tokens.pop_front() {
@@ -35,7 +35,7 @@ impl InputGobbler {
         }
     }
 
-    pub fn push_front(&mut self, words: impl DoubleEndedIterator<Item = CompactStr>) {
+    pub fn push_front(&mut self, words: impl DoubleEndedIterator<Item = CompactString>) {
         for word in words.rev() {
             self.tokens.push_front(word) // TODO: why isn't there a push_front_all or sth???
         }
@@ -44,6 +44,6 @@ impl InputGobbler {
 
 // TODO: allocations
 // TODO: some tokens should be treated with extra care, ex. "{foo bar}" => ["{", "foo", "bar", "}"]
-fn tokenize(input: &str) -> impl Iterator<Item = CompactStr> + '_ {
+fn tokenize(input: &str) -> impl Iterator<Item = CompactString> + '_ {
     input.split_whitespace().map(Into::into)
 }

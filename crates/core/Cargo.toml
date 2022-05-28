@@ -12,6 +12,6 @@ eyre = "0.6.5"
 linkme = "0.2.6"
 macros = { path = "../macros" }
 rustyline = "9.0.0"
-compact_str = { version = "0.1.0", features = ["serde"] }
+compact_str = { version = "0.4", features = ["serde"] }
 im = "15.0.0"
 gcmodule = "0.3.3"

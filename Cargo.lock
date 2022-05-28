@@ -54,6 +54,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "castaway"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46b662d08e94a6c8e715abef5e10e6fdf47c2be6375a5bb246b65c177d575eb7"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -120,12 +129,14 @@ dependencies = [
 
 [[package]]
 name = "compact_str"
-version = "0.1.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e21ca434f8108ce09fd996dc1c5baae71c8aed4a240a399ecc13982b8b484f30"
+checksum = "fb6f80f92629b81f5b17b616a99f72870556ca457bbbd99aeda7bb5d194316a2"
 dependencies = [
+ "castaway",
+ "itoa",
+ "ryu",
  "serde",
- "static_assertions",
 ]
 
 [[package]]
@@ -242,6 +253,12 @@ name = "indenter"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce23b50ad8242c51a442f3ff322d56b02f08852c77e4c0b4d3fd684abc89c683"
+
+[[package]]
+name = "itoa"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "112c678d4050afce233f4f2852bb2eb519230b3cf12f33585275537d7e41578d"
 
 [[package]]
 name = "lazy_static"
@@ -501,6 +518,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dead70b0b5e03e9c814bcb6b01e03e68f7c57a80aa48c72ec92152ab3e818d49"
 
 [[package]]
+name = "rustversion"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2cc38e8fa666e2de3c4aba7edeb5ffc5246c1c2ed0e3d17e560aeeba736b23f"
+
+[[package]]
 name = "rustyline"
 version = "9.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -523,6 +546,12 @@ dependencies = [
  "utf8parse",
  "winapi",
 ]
+
+[[package]]
+name = "ryu"
+version = "1.0.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3f6f92acf49d1b98f7a81226834412ada05458b7364277387724a237f062695"
 
 [[package]]
 name = "scopeguard"
@@ -560,12 +589,6 @@ name = "smallvec"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe0f37c9e8f3c5a4a66ad655a93c74daac4ad00c441533bf5c6e7990bb42604e"
-
-[[package]]
-name = "static_assertions"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "str-buf"

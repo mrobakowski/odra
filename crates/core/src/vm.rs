@@ -1,5 +1,5 @@
 use color_eyre::Result;
-use compact_str::CompactStr;
+use compact_str::CompactString;
 use eyre::{eyre, WrapErr};
 
 use crate::AsOdraValue;
@@ -15,7 +15,7 @@ pub struct Vm {
 }
 
 pub struct Fibre {
-    name: CompactStr,
+    name: CompactString,
     pub stack: im::Vector<OdraValue>,
 }
 
@@ -48,7 +48,7 @@ impl Vm {
     }
 
     #[inline]
-    pub fn run(&mut self, unresolved_word: CompactStr) -> Result<()> {
+    pub fn run(&mut self, unresolved_word: CompactString) -> Result<()> {
         let word = self.vocabulary.resolve(unresolved_word)?;
 
         word.exec(self);
@@ -91,17 +91,17 @@ mod vocabulary {
     type VocabRef = Arc<RwLock<VocabInner>>;
     type VocabWeak = Weak<RwLock<VocabInner>>;
     pub struct Vocabulary {
-        all_vocabs: HashMap<CompactStr, VocabRef>,
+        all_vocabs: HashMap<CompactString, VocabRef>,
         current: VocabRef,
         root: VocabRef,
     }
 
     struct VocabInner {
         /// must be unique, TODO: semantic unsafe constructor?
-        id: CompactStr,
+        id: CompactString,
         parent: VocabWeak,
-        words: HashMap<CompactStr, &'static dyn Word>, // TODO: leakage!
-        children: HashMap<CompactStr, VocabRef>,
+        words: HashMap<CompactString, &'static dyn Word>, // TODO: leakage!
+        children: HashMap<CompactString, VocabRef>,
     }
 
     impl Eq for VocabInner {}
@@ -119,7 +119,7 @@ mod vocabulary {
 
     impl Vocabulary {
         pub fn empty() -> Vocabulary {
-            let key: CompactStr = "root".into();
+            let key: CompactString = "root".into();
             let root = Arc::new(RwLock::new(VocabInner {
                 id: key.clone(),
                 parent: Weak::new(),
@@ -136,7 +136,7 @@ mod vocabulary {
             }
         }
 
-        pub fn resolve(&self, unresolved_word: CompactStr) -> Result<&'static dyn Word> {
+        pub fn resolve(&self, unresolved_word: CompactString) -> Result<&'static dyn Word> {
             self.current
                 .read()
                 .map_err(|_| eyre!("vocab lock poisoned"))?

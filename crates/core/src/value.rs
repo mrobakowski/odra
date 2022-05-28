@@ -1,5 +1,5 @@
 use color_eyre::Result;
-use compact_str::CompactStr;
+use compact_str::CompactString;
 use eyre::eyre;
 use gcmodule::{ThreadedCc, Trace};
 use std::{fmt::Debug, hash::Hash, ops::Deref};
@@ -11,7 +11,7 @@ use crate::Vm;
 #[derive(Clone, Debug, PartialEq)]
 pub enum OdraValue {
     Number(f64),
-    String(CompactStr), // compact str has atomically reference counted strings and a few nice small-size optimizations
+    String(CompactString), // compact str has atomically reference counted strings and a few nice small-size optimizations
     List(im::Vector<OdraRef>),
     Map(im::HashMap<OdraRef, OdraRef>),
 }
@@ -97,7 +97,7 @@ impl Trace for OdraValue {
 pub enum OdraType {
     Number,
     String,
-    OtherNamed(CompactStr),
+    OtherNamed(CompactString),
 }
 
 pub trait AsOdraValue: AsOdraType {
